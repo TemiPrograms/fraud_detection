@@ -6,7 +6,7 @@
 3. **Consolidate Categorical Levels:** Group missing, blank, or generic placeholder strings (like `"Unknown Device"` or `"Invalid Method"`) into a uniform `"Unknown"` category.
 4. **Feature Engineering:** Deriving a contextual `time_of_day` factor variable from the raw transaction timestamps to capture time based fraud patterns.
 
-``` {r data-cleaning, message=FALSE, warning=FALSE}
+```{r data-cleaning, message=FALSE, warning=FALSE}
 # Load required libraries
 library(dplyr)
 
@@ -30,21 +30,21 @@ df <- df_raw %>%
       median(time_of_transaction, na.rm = TRUE),
       time_of_transaction
     ),
-    # Standardize device categories
+    # Standardize device categories (handles NA, placeholders, and empty strings)
     device_used = ifelse(
       is.na(device_used) | device_used %in% c("Unknown Device", "N/A", "NA", ""),
       "Unknown",
       device_used
     ),
-    # Handle missing locations
+    # Handle missing locations (fixed to catch empty strings "")
     location = ifelse(
-      is.na(location),
+      is.na(location) | location == "",
       "Unknown",
       location
     ),
-    # Clean and standardize payment methods
+    # Clean and standardize payment methods (fixed to catch empty strings "")
     payment_method = ifelse(
-      is.na(payment_method) | payment_method == "Invalid Method",
+      is.na(payment_method) | payment_method %in% c("Invalid Method", ""),
       "Unknown",
       payment_method
     )
