@@ -1,1 +1,70 @@
+# Section 1: Data Loading & Cleaning
 
+### Data Quality Objectives:
+1. **Standardize Schema:** Standardize all column names into a consistent `snake_case` format.
+2. **Handle Missing Data:** Address missing numerical values through median imputation to avoid distorting distributions.
+3. **Consolidate Categorical Levels:** Group missing, blank, or generic placeholder strings (like `"Unknown Device"` or `"Invalid Method"`) into a uniform `"Unknown"` category.
+4. **Feature Engineering:** Deriving a contextual `time_of_day` factor variable from the raw transaction timestamps to capture time based fraud patterns.
+
+``` {r data-cleaning, message=FALSE, warning=FALSE}
+# Load required libraries
+library(dplyr)
+
+# 1. Load the raw dataset
+df_raw <- read.csv("fraud_detection_dataset.csv", stringsAsFactors = FALSE)
+
+# 2. Execute pipeline for cleaning and feature engineering
+df <- df_raw %>%
+  rename_with(tolower) %>%
+  rename_with(~ gsub("\\.", "_", .x)) %>%
+  mutate(
+    # Impute missing transaction amounts with the median
+    transaction_amount = ifelse(
+      is.na(transaction_amount),
+      median(transaction_amount, na.rm = TRUE),
+      transaction_amount
+    ),
+    # Impute missing timestamps with the median hour
+    time_of_transaction = ifelse(
+      is.na(time_of_transaction),
+      median(time_of_transaction, na.rm = TRUE),
+      time_of_transaction
+    ),
+    # Standardize device categories
+    device_used = ifelse(
+      is.na(device_used) | device_used %in% c("Unknown Device", "N/A", "NA", ""),
+      "Unknown",
+      device_used
+    ),
+    # Handle missing locations
+    location = ifelse(
+      is.na(location),
+      "Unknown",
+      location
+    ),
+    # Clean and standardize payment methods
+    payment_method = ifelse(
+      is.na(payment_method) | payment_method == "Invalid Method",
+      "Unknown",
+      payment_method
+    )
+  )
+
+# 3. Feature Engineering: Create time_of_day categorical factor
+df <- df %>%
+  mutate(time_of_day = case_when(
+    time_of_transaction >= 6  & time_of_transaction <= 11 ~ "Morning",
+    time_of_transaction >= 12 & time_of_transaction <= 17 ~ "Afternoon",
+    time_of_transaction >= 18 & time_of_transaction <= 23 ~ "Evening",
+    TRUE                                                  ~ "Night"
+  ))
+
+# Convert to ordered factor for logical chronological plotting
+df$time_of_day <- factor(df$time_of_day,
+                         levels = c("Night", "Morning", "Afternoon", "Evening"))
+
+# Ensure target variable is numeric
+df$fraudulent <- as.numeric(df$fraudulent)
+
+# Save the cleaned dataset for modeling phases
+write.csv(df, "Fraud_Detection_Dataset_Cleaned.csv", row.names = FALSE)
