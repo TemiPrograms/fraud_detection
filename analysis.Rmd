@@ -69,3 +69,372 @@ df$fraudulent <- as.numeric(df$fraudulent)
 # Save the cleaned dataset for modeling phases
 write.csv(df, "Fraud_Detection_Dataset_Cleaned.csv", row.names = FALSE)
 ```
+
+---
+
+# Section 2: Descriptive Statistics
+
+Before transitioning into advanced predictive modeling, it is essential to establish baseline data distributions and evaluate relationships among variables. Descriptive summaries allow us to evaluate transactional behavior across multiple categorical and continuous dimensions.
+
+### Data Aggregation and Stratification Plan:
+1. **Continuous Feature Summaries:** Generate structural summaries of transactional amounts, chronological timestamps, accounts profiles, and velocity constraints.
+2. **Target Class Stratification:** Calculate detailed metric comparisons for amount variables across both fraudulent and legitimate categories.
+3. **Categorical Proportional Testing:** Construct cross-tabulated contingency profiles evaluating risk ratios across hardware devices and transactional timelines.
+
+```{r descriptive-statistics, message=FALSE, warning=FALSE}
+# Load summary packages
+library(dplyr)
+library(tidyr)
+library(psych)
+
+# 1. Subset and summarize numerical variables
+numeric_vars <- df %>%
+  select(transaction_amount, time_of_transaction, previous_fraudulent_transactions,
+         account_age, number_of_transactions_last_24h, fraudulent)
+
+describe(numeric_vars)
+
+# 2. Stratify financial values by transaction class
+df %>%
+  group_by(fraudulent) %>%
+  summarise(
+    n           = n(),
+    mean_amt    = round(mean(transaction_amount), 2),
+    median_amt  = round(median(transaction_amount), 2),
+    sd_amt      = round(sd(transaction_amount), 2),
+    min_amt     = round(min(transaction_amount), 2),
+    max_amt     = round(max(transaction_amount), 2)
+  )
+
+# 3. Categorical cross-tabulation: Device types vs. Fraud status
+df %>%
+  group_by(device_used, fraudulent) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  pivot_wider(names_from = fraudulent, values_from = n, values_fill = 0) %>%
+  rename(Not_Fraudulent = `0`, Fraudulent = `1`) %>%
+  mutate(fraud_rate = round(Fraudulent / (Not_Fraudulent + Fraudulent) * 100, 2))
+
+# 4. Categorical cross-tabulation: Time of day vs. Fraud status
+df %>%
+  group_by(time_of_day, fraudulent) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  pivot_wider(names_from = fraudulent, values_from = n, values_fill = 0) %>%
+  rename(Not_Fraudulent = `0`, Fraudulent = `1`) %>% 
+  mutate(fraud_rate = round(Fraudulent / (Not_Fraudulent + Fraudulent) * 100, 2))
+```
+
+---
+
+# Section 3: Data Visualization & Research Hypotheses
+
+Visual analytical approaches clarify structural differences across target features. We use density plots, distributions, log scales, and fit-line overlays to systematically explore five strategic research questions regarding operational vulnerabilities.
+
+### Research Questions Explored:
+* **Exploratory Base Dist:** Review overall continuous values split by legitimate vs. anomalous target classes.
+* **Research Question 1:** Evaluate variance shifts in total calculated fraud rates between unique interaction devices.
+* **Research Question 2:** Map conditional probability variations of transaction risk throughout daily windows.
+* **Research Question 3:** Analyze whether short-term activity velocity acts as an effective hazard predictor.
+* **Research Question 4:** Contrast account maturity duration vectors against overall breach vulnerabilities.
+* **Research Question 5:** Track transaction sizing dynamics to identify specific high-value spending patterns.
+
+```{r primary-eda-plots, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(scales)
+
+# Set global color profiles for uniform visual storytelling
+fraud_colors <- c("0" = "#4E79A7", "1" = "#E15759")
+
+# Figure 1: Transaction Amount Density Profile
+p_hist1 <- ggplot(df, aes(x = transaction_amount, fill = factor(fraudulent))) +
+  geom_density(alpha = 0.5) + 
+  scale_fill_manual(values = fraud_colors, labels = c("Not Fraudulent", "Fraudulent")) +
+  scale_x_log10(labels = dollar_format()) + 
+  labs(title = "Figure 1. Distribution of Transaction Amount",
+       subtitle = "Comparing the 'shape' of spending for both groups",
+       x = "Transaction Amount (USD)", y = "Density", fill = NULL) +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "top")
+
+# Figure 2: Account Age Density Profile
+p_hist2 <- ggplot(df, aes(x = account_age, fill = factor(fraudulent))) +
+  geom_density(alpha = 0.5) + 
+  scale_fill_manual(values = fraud_colors, labels = c("Not Fraudulent", "Fraudulent")) +
+  labs(title = "Figure 2. Distribution of Account Age",
+       subtitle = "Are fraudulent accounts younger on average?",
+       x = "Account Age (Days)", y = "Density", fill = NULL) +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "top")
+
+# Figure 3: Short-term Velocity Density Profile
+p_hist3 <- ggplot(df, aes(x = number_of_transactions_last_24h, fill = factor(fraudulent))) +
+  geom_density(alpha = 0.5) + 
+  scale_fill_manual(values = fraud_colors, labels = c("Not Fraudulent", "Fraudulent")) +
+  labs(title = "Figure 3. Distribution of Transactions in Last 24 Hours",
+       subtitle = "Frequency patterns of both transaction types",
+       x = "Number of Transactions (Last 24H)", y = "Density", fill = NULL) +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "top")
+
+# Figure 4: Historical Infraction Distribution Density
+p_hist4 <- ggplot(df, aes(x = previous_fraudulent_transactions, fill = factor(fraudulent))) +
+  geom_density(alpha = 0.5) + 
+  scale_fill_manual(values = fraud_colors, labels = c("Not Fraudulent", "Fraudulent")) +
+  labs(title = "Figure 4. Distribution of Previous Fraudulent Transactions",
+       subtitle = "Historical risk profile of accounts",
+       x = "Previous Fraudulent Transactions", y = "Density", fill = NULL) +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "top")
+
+# Figure 5: Hourly Operational Window Timeline
+p_hist5 <- ggplot(df, aes(x = time_of_transaction, fill = factor(fraudulent))) +
+  geom_density(alpha = 0.5) + 
+  scale_fill_manual(values = fraud_colors, labels = c("Not Fraudulent", "Fraudulent")) +
+  scale_x_continuous(breaks = seq(0, 23, 2)) +
+  labs(title = "Figure 5. Distribution of Transaction Hour",
+       subtitle = "Peak times for legitimate vs. fraudulent activity",
+       x = "Hour of Day (Military Time)", y = "Density", fill = NULL) +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "top")
+
+# Render primary visualization assets
+print(p_hist1)
+print(p_hist2)
+print(p_hist3)
+print(p_hist4)
+print(p_hist5)
+```
+
+### Research Question 1: Hardware Interface Vulnerability Analyses
+We evaluate the operational breakdown across consumer devices to uncover device-specific risk concentrations within regional locations.
+
+```{r research-question-1, message=FALSE, warning=FALSE}
+# Boxplot visualization of fraud probabilities calculated by hardware interface
+df %>%
+  group_by(device_used, location) %>%
+  summarise(fraud_rate = (sum(fraudulent) / n()) * 100, .groups = "drop") %>%
+  ggplot(aes(x = reorder(device_used, -fraud_rate, FUN = mean), 
+             y = fraud_rate, 
+             fill = device_used)) +
+  geom_boxplot(alpha = 0.85, width = 0.7) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 5, color = "black") +
+  scale_fill_brewer(palette = "Set2") +
+  scale_y_continuous(labels = percent_format(scale = 1), limits = c(0, NA)) +
+  labs(title = "Figure 6. Fraud Rate Distribution by Device Type",
+       subtitle = "Percentage of transactions that were fraudulent. Diamond (◆) marks the average.",
+       x = "Device Used", y = "Fraud Rate (%)", fill = "Device") +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "none")
+```
+
+### Research Question 2: Diurnal Risk Profile Matrix
+Evaluating diurnal anomalies allows us to target system monitoring efforts toward high-risk windows throughout the day.
+
+```{r research-question-2, message=FALSE, warning=FALSE}
+# 1. Quantify hourly fraud probability grouped across geographical bounds
+rq2_risk_dist <- df %>%
+  group_by(time_of_day, location) %>%
+  summarise(
+    fraud_rate_pct = (sum(fraudulent) / n()) * 100,
+    .groups = "drop"
+  )
+
+# 2. Render boxplot output distributions across shifts
+p_rq2_boxplot <- ggplot(rq2_risk_dist, 
+                        aes(x = reorder(time_of_day, -fraud_rate_pct, FUN = mean), 
+                            y = fraud_rate_pct, 
+                            fill = time_of_day)) +
+  geom_boxplot(alpha = 0.8) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 4, color = "black") +
+  scale_fill_brewer(palette = "Pastel1") +
+  labs(title = "Figure 8. Average Fraud Probability by Time of Day",
+       subtitle = "Y-axis shows the risk percentage (%). Diamond (◆) indicates the mean.",
+       x = "Time of Day", y = "Probability of Fraud (%)", fill = NULL) +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "none")
+
+print(p_rq2_boxplot)
+
+# 3. Print quantitative reference distributions
+rq2_risk_dist %>%
+  group_by(time_of_day) %>%
+  summarise(
+    avg_probability = round(mean(fraud_rate_pct), 2),
+    min_prob = round(min(fraud_rate_pct), 2),
+    max_prob = round(max(fraud_rate_pct), 2),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(avg_probability))
+```
+
+### Research Question 3: Volume Velocity Limitations As a Fraud Predictor
+We apply single-predictor generalized linear structures to evaluate the risk signals from short-term rapid activity.
+
+
+
+```{r research-question-3, message=FALSE, warning=FALSE}
+# Jitter scatter plot with embedded binomial curve overlay
+p_rq3c <- ggplot(df, aes(x = number_of_transactions_last_24h, y = fraudulent)) +
+  geom_jitter(height = 0.04, width = 0.15, alpha = 0.04, size = 0.8, color = "#E15759") +
+  geom_smooth(method = "glm", method.args = list(family = "binomial"),
+    color = "#4E79A7", linewidth = 1.2, se = TRUE) +
+  scale_x_continuous(breaks = seq(floor(min(df$number_of_transactions_last_24h, na.rm = TRUE)),
+                                  ceiling(max(df$number_of_transactions_last_24h, na.rm = TRUE)), by = 1)) +
+  scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.25, 0.5, 0.75, 1)) +
+  labs(title = "Figure 12. Logistic Regression: Fraud Probability vs. Transactions (24H)",
+       subtitle = "Fitted probability curve with jittered binary fraud outcomes",
+       x = "Number of Transactions (Last 24H)", y = "Probability of Fraud") +
+  theme_minimal(base_size = 13)
+
+print(p_rq3c)
+
+# Descriptive baseline statistics
+df %>%
+  group_by(fraudulent) %>%
+  summarise(
+    n    = n(),
+    mean = round(mean(number_of_transactions_last_24h), 2),
+    sd   = round(sd(number_of_transactions_last_24h), 2),
+    med  = median(number_of_transactions_last_24h),
+    .groups = "drop"
+  )
+
+# Calculate model summary outputs
+model_rq3 <- glm(fraudulent ~ number_of_transactions_last_24h, data = df, family = binomial)
+summary(model_rq3)
+```
+
+### Research Question 4: Account Lifecycle Vulnerabilities
+Evaluating account lifecycles helps identify potential "sleeper" accounts or immediate fraud targets.
+
+```{r research-question-4, message=FALSE, warning=FALSE}
+# Plot 4A: Stratified Outlier Boxplot Summary
+p_rq4a <- ggplot(df, aes(x = factor(fraudulent), y = account_age, fill = factor(fraudulent))) +
+  geom_boxplot(outlier.alpha = 0.3, outlier.size = 1) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3, color = "black") +
+  scale_fill_manual(values = fraud_colors, labels = c("Not Fraudulent", "Fraudulent")) +
+  scale_x_discrete(labels = c("Not Fraudulent", "Fraudulent")) +
+  labs(title = "Figure 13. Account Age Distribution by Fraud Status",
+       subtitle = "Diamond (◆) marks the group mean. Younger accounts show higher risk.",
+       x = "Status", y = "Account Age (Days)", fill = NULL) +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "none")
+
+# Plot 4B: Binary Logistic Evaluation Profile
+p_rq4b <- ggplot(df, aes(x = account_age, y = fraudulent)) +
+  geom_point(alpha = 0.02, size = 1, color = "#E15759") + 
+  geom_smooth(method = "glm", method.args = list(family = "binomial"),
+              color = "#4E79A7", linewidth = 1.2, se = TRUE) +
+  labs(title = "Figure 14. Probability of Fraud vs. Account Age",
+       subtitle = "Fitted logistic regression curve showing risk decay over time",
+       x = "Account Age (Days)", y = "Probability of Fraud (0 to 1)") +
+  theme_minimal(base_size = 13)
+
+# Plot 4C: Visual Density Overlay Summary
+p_rq4c <- ggplot(df, aes(x = account_age, fill = factor(fraudulent))) +
+  geom_density(alpha = 0.6) +
+  scale_fill_manual(values = fraud_colors, labels = c("Not Fraudulent", "Fraudulent")) +
+  labs(title = "Figure 15. Density of Account Ages: Fraud vs. Legitimate",
+       subtitle = "Shows where the bulk of fraudulent accounts fall on the timeline",
+       x = "Account Age (Days)", y = "Density", fill = "Transaction Type") +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "top")
+
+# Render comparative group assets
+print(p_rq4a)
+print(p_rq4b)
+print(p_rq4c)
+
+# Statistical breakdown
+df %>%
+  group_by(fraudulent) %>%
+  summarise(
+    n    = n(),
+    mean = round(mean(account_age), 2),
+    sd   = round(sd(account_age), 2),
+    med  = median(account_age),
+    .groups = "drop"
+  )
+
+model_rq4 <- glm(fraudulent ~ account_age, data = df, family = binomial)
+summary(model_rq4)
+```
+
+### Research Question 5: Value Sizing Indicators
+Evaluating transaction values reveals whether anomalous activities scale proportionally with spending volume.
+
+```{r research-question-5, message=FALSE, warning=FALSE}
+# Plot 5A: Logged Amount Variant Comparison
+p_rq5a <- ggplot(df, aes(x = factor(fraudulent), y = transaction_amount, fill = factor(fraudulent))) +
+  geom_boxplot(outlier.alpha = 0.3, outlier.size = 1) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3, color = "black") +
+  scale_fill_manual(values = fraud_colors, labels = c("Not Fraudulent", "Fraudulent")) +
+  scale_x_discrete(labels = c("Not Fraudulent", "Fraudulent")) +
+  scale_y_log10(labels = dollar_format()) +  
+  labs(title = "Figure 16. Transaction Amount by Fraud Status (Log Scale)",
+       subtitle = "Diamond (◆) marks the group mean. Log scale used to manage high outliers.",
+       x = "Status", y = "Transaction Amount (USD)", fill = NULL) +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "none")
+
+# Plot 5B: Logistic Regression Over Looped Log Ranges
+p_rq5b <- ggplot(df, aes(x = transaction_amount, y = fraudulent)) +
+  geom_jitter(height = 0.05, alpha = 0.03, size = 0.8, color = "#E15759") + 
+  geom_smooth(method = "glm", method.args = list(family = "binomial"),
+              color = "#4E79A7", linewidth = 1.2, se = TRUE) +
+  scale_x_log10(labels = dollar_format()) +
+  annotation_logticks(sides = "b") + 
+  labs(title = "Figure 17. Probability of Fraud vs. Transaction Amount",
+       subtitle = "The curve remains relatively flat even with extreme outliers.",
+       x = "Transaction Amount (USD)", y = "Probability of Fraud") +
+  theme_minimal(base_size = 13)
+
+# Plot 5C: Cleaned Continuous Value Scale Density Comparison
+p_rq5c <- ggplot(df, aes(x = transaction_amount, fill = factor(fraudulent))) +
+  geom_density(alpha = 0.5) +
+  scale_fill_manual(values = fraud_colors, labels = c("Not Fraudulent", "Fraudulent")) +
+  scale_x_log10(labels = dollar_format()) + 
+  annotation_logticks(sides = "b") +
+  labs(title = "Figure 18. Density of Transaction Amounts",
+       subtitle = "Log scale reveals that Fraud and Legitimate patterns are nearly identical.",
+       x = "Transaction Amount (USD)", y = "Density", fill = "Transaction Type") +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "top")
+
+# Output structural charts
+print(p_rq5a)
+print(p_rq5b)
+print(p_rq5c)
+```
+
+---
+
+# Section 4: Multivariate Logistic Regression Modeling
+
+To control for confounding variables and evaluate structural hazard dependencies simultaneously, we fit a multi-predictor generalized linear model. This model isolates individual effect sizes to determine true transactional risk drivers.
+
+### Feature Attributes Tested:
+* **Financial Attributes:** `transaction_amount` (continuous asset sizes)
+* **Velocity Constraints:** `number_of_transactions_last_24h` (short-term transaction counts)
+* **Account Integrity Indicators:** `account_age` and historical flags (`previous_fraudulent_transactions`)
+* **Contextual Profiles:** User configurations (`device_used`) and timing categories (`time_of_day`)
+
+```{r multivariate-modeling, message=FALSE, warning=FALSE}
+# 1. Fit the complete multi-predictor structural model
+model_full <- glm(fraudulent ~
+                    transaction_amount +
+                    number_of_transactions_last_24h +
+                    account_age +
+                    previous_fraudulent_transactions +
+                    device_used +
+                    time_of_day,
+                  data = df, family = binomial)
+
+# 2. Extract and inspect estimated statistical weights
+summary(model_full)
+
+# 3. Output fit optimization summaries
+cat("AIC Optimization Metric:", AIC(model_full), "\n")
+
+# 4. Clean up environmental tracking memory
+rm(list = ls())
+```
