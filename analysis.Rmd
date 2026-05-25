@@ -32,7 +32,7 @@ df <- df_raw %>%
     ),
     # Standardize device categories (handles NA, placeholders, and empty strings)
     device_used = ifelse(
-      is.na(device_used) | device_used %in% c("Unknown Device", "N/A", "NA", ""),
+      is.na(device_used) | device_used %in= c("Unknown Device", "N/A", "NA", ""),
       "Unknown",
       device_used
     ),
@@ -68,3 +68,4 @@ df$fraudulent <- as.numeric(df$fraudulent)
 
 # Save the cleaned dataset for modeling phases
 write.csv(df, "Fraud_Detection_Dataset_Cleaned.csv", row.names = FALSE)
+```
