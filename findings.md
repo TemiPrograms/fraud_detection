@@ -1,3 +1,8 @@
+---
+title: "Statistical Analysis and Modeling of Fraud Risk Factors"
+output: html_document
+---
+
 ## 1. ANOVA Analysis: Device Type and Fraud Rates
 ### Hypothesis Testing
 * [cite_start]**Null Hypothesis ($H_0$):** The mean fraud rate is equal across all device types[cite: 4].
@@ -20,7 +25,7 @@
 * [cite_start]**Null Hypothesis ($H_0$):** The mean fraud rate is equal across all time periods (Morning, Afternoon, Evening, Night)[cite: 21].
 * **Alternative Hypothesis ($H_1$):** At least one time period has a significantly different mean fraud rate[cite: 22].
 
-![Fraud Rate Distribution by Time of Day](fraud_rate_by_time-of-day.png)
+![Fraud Rate Distribution by Time of Day](fraud_by_hr_distribution.png)
 
 ### Findings & Distribution Dynamics
 * **Evening Period:** Shows the highest median and mean fraud rates across the dataset[cite: 37].
