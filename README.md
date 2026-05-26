@@ -38,6 +38,4 @@ The dataset contains **12 features**, including:
 - Payment_Method  
 - Fraudulent (target variable)
 
-These variables are used to explore behavioral patterns and potential indicators of fraud.
-
 ---
