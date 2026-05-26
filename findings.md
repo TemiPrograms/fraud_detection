@@ -20,7 +20,7 @@
 * **Null Hypothesis ($H_0$):** The mean fraud rate is equal across all time periods (Morning, Afternoon, Evening, Night).
 * **Alternative Hypothesis ($H_1$):** At least one time period has a significantly different mean fraud rate.
 
-![Fraud Rate Distribution by Time of Day](fraud_rate_by_time-of-day.png)
+![Fraud Rate Distribution by Time of Day](fruad_rate_by_time-of-day.png)
 
 ### Findings & Distribution Dynamics
 * **Evening Period:** Shows the highest median and mean fraud rates across the dataset.
