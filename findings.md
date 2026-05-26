@@ -1,8 +1,3 @@
----
-title: "Statistical Analysis and Modeling of Fraud Risk Factors"
-output: html_document
----
-
 ## 1. ANOVA Analysis: Device Type and Fraud Rates
 ### Hypothesis Testing
 * **Null Hypothesis ($H_0$):** The mean fraud rate is equal across all device types.
