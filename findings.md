@@ -43,6 +43,8 @@ output: html_document
 * [cite_start]**Response Variable:** `fraudulent` (The predicted probability of a transaction being fraud) [cite: 57]
 * **Predictor:** `is_high_value` (Categorized as Low Range $<\$25\text{k}$ or High Range $>\$25\text{k}$) [cite: 58]
 
+![Fraud Risk Shift by Amount Tier](regression%20model%201.png)
+
 ### Statistical Metrics
 * [cite_start]**P-value:** $0.149$ [cite: 62]
 * [cite_start]**F-statistic:** $2.081$ [cite: 67]
@@ -64,6 +66,8 @@ output: html_document
 * [cite_start]**Response Variable:** `fraudulent` (Predicted fraud probability) [cite: 92]
 * **Predictors:** `transaction_amount`, `device_used` (Desktop, Mobile, Tablet, Unknown), and `previous_fraudulent_transactions` [cite: 92, 96]
 * [cite_start]**Interaction Term:** `device_used:transaction_amount` (Evaluates how fraud risk changes as transaction amounts increase across different devices) [cite: 93]
+
+![Regression Interaction: Amount vs. Fraud Probability by Device](regression%20model%202.png)
 
 ### Equation Structure
 $$\text{Predicted Fraud Probability} = \beta_0 + \beta_1(\text{Amount}) + \beta_2(\text{Device}) + \beta_3(\text{PrevFraud}) + \beta_4(\text{Amount} \times \text{Device})$$
@@ -88,3 +92,5 @@ $$\text{Predicted Fraud Probability} = \beta_0 + \beta_1(\text{Amount}) + \beta_
 ### Findings & Timeline Dynamics
 * Analysis of account age densities reveals a noticeable distribution shift: older accounts show an increased probability of fraudulent transactions[cite: 145].
 * [cite_start]A pronounced risk spike is visible within the **75–100 day range**[cite: 145]. [cite_start]This indicates that as accounts mature, they face a higher compounding probability of credential stuffing, account takeovers, or delayed-execution breaches by malicious actors[cite: 145].
+
+![Density of Account Ages: Fraud vs. Legitimate](fraud_by_account_age.png)
