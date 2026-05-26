@@ -36,7 +36,7 @@
 ## 3. Regression Analysis (Model 1): Fraud Risk Shift by Amount Tier
 ### Model Framework
 * **Response Variable:** `fraudulent` (The predicted probability of a transaction being fraud)
-* **Predictor:** `is_high_value` (Categorized as Low Range $<\$25\text{k}$ or High Range $>\$25\text{k}$)
+* **Predictor:** `is_high_value` (Categorized as Low Range x<$25 or High Range x>$25
 
 ![Fraud Risk Shift by Amount Tier](regression%20model%201.png)
 
