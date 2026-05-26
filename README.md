@@ -22,7 +22,7 @@ The goal of this project is to analyze a digital transaction dataset and identif
 
 ## Dataset
 
-This project uses a subset of a **51,000-record dataset**:  
+This project uses a kaggle based **51,000-record dataset**:  
 `fraud_detection_dataset.csv`
 
 The dataset contains **12 features**, including:
